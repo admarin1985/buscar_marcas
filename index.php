@@ -6,7 +6,7 @@ if ($_SESSION['login']!==true ) {
 }
     require 'Db.php';   
   
-    $query = 'SELECT codigo, contrato, puesto, estructura.marca, fecha_hora FROM estructura inner join marcas on estructura.id = marcas.marca where 1';
+    $query = 'SELECT codigo, contrato, puesto, estructura.marca, fecha_hora FROM estructura inner join marcas on estructura.codigo = marcas.marca where 1';
 
     if (isset($_GET['fecha']) && $_GET['fecha'] != ''){
         $query .= ' and DATE(fecha_hora) = '.'"'.$_GET['fecha'].'"';
@@ -33,7 +33,6 @@ if ($_SESSION['login']!==true ) {
 ?>   
     
 <html>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <head>
     <title>Buscador de marcas</title>
     <link href="style.css" rel="stylesheet">
