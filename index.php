@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 if ($_SESSION['login']!==true ) {
@@ -9,11 +8,11 @@ if ($_SESSION['login']!==true ) {
     $query = 'SELECT codigo, contrato, puesto, estructura.marca, fecha_hora FROM estructura inner join marcas on estructura.codigo = marcas.marca where 1';
 
     if (isset($_GET['fecha']) && $_GET['fecha'] != ''){
-        $query .= ' and DATE(fecha_hora) = '.'"'.$_GET['fecha'].'"';
+        $query .= ' and DATE(fecha_hora) = '.'"'.$_GET['fecha'].'"';        
     }
 
     if (isset($_GET['hora']) && $_GET['hora'] != ''){
-        $query .= ' and TIME(fecha_hora) like '.'"%'.$_GET['hora'].'%"';
+        $query .= ' and TIME(fecha_hora) like '.'"'.$_GET['hora'].'%"';
     }
     
     if (isset($_GET['contrato']) && $_GET['contrato'] != ''){
@@ -25,13 +24,40 @@ if ($_SESSION['login']!==true ) {
     }
 
     if (isset($_GET['marca']) && $_GET['marca'] != ''){
-        $query .= ' and marca like "%'.$_GET['marca'].'%"';
+        $query .= ' and estructura.marca like "%'.$_GET['marca'].'%"';
     }
-       
+
+    if (isset($_GET['submited']) && $_GET['submited'] != ''){
+        $_SESSION['query'] = $query; 
+    }
+     
+    if(isset($_SESSION['query']))
+        $query = $_SESSION['query'];
+
     $db = new Db();
     $rows = $db -> select($query);
-?>   
-    
+
+    //paginar resultados
+    $config = parse_ini_file('./config.ini');
+    $perpage = $config['results_perpage'];
+    if(isset($_GET['page']) & !empty($_GET['page'])){
+        $curpage = $_GET['page'];
+    }else{
+        $curpage = 1;
+    }
+    $start = ($curpage * $perpage) - $perpage;
+    $totalres = $rows === false ? 0 : sizeof($rows);
+
+    $endpage = ceil($totalres/$perpage);
+    $startpage = 1;
+    $nextpage = $curpage + 1;
+    $previouspage = $curpage - 1;
+
+    $paginatedQuery = $query . ' LIMIT '.$start.', '. $perpage;
+
+    $rows = $db -> select($paginatedQuery);
+?>
+
 <html>
     <head>
     <title>Buscador de marcas</title>
@@ -40,18 +66,19 @@ if ($_SESSION['login']!==true ) {
     <link rel="stylesheet" href="bootstrap-extension/css/bootstrap-extension.css" > 
     <!-- Optional theme -->
     <link rel="stylesheet" href="bootstrap/dist/css/bootstrap-theme.min.css" >
-    <link rel="stylesheet" href="DataTables/media/css/dataTables.bootstrap.min.css" >
+    <link rel="stylesheet" href="bootstrap-datepicker/css/bootstrap-datetimepicker.min.css" >
 
     <!-- Latest compiled and minified JavaScript -->
     <script src="jquery/dist/jquery.min.js"></script>
     <script src="bootstrap/dist/js/tether.min.js"></script>
     <script src="bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="DataTables/media/js/jquery.dataTables.min.js"></script>
-    <script src="DataTables/media/js/dataTables.bootstrap.min.js"></script>
-    <script src="DataTables/media/js/i18n/es.js"></script>    
+    <script src="moment/min/moment.min.js"></script>
+    <script src="moment/locale/es.js"></script>
+    <script src="bootstrap-datepicker/js/bootstrap-datetimepicker.min.js"></script>
+
     
 </head>
-<body> 
+
 <div class="buscador"> 
     <div class="float-lg-right">
         <a href='logout.php'> Salir <i class="fa fa-close">X</i></a>
@@ -63,8 +90,8 @@ if ($_SESSION['login']!==true ) {
                         <div class="form-body">
                         <form action="index.php" method="GET">
                             <div class=row>
-                                <div class="col-md-3">Fecha: <input type="date" id="fecha" class="form-control" name="fecha"/></div>
-                                <div class="col-md-3">Hora: <input type="time" id="hora" class="form-control" name="hora"/></div>
+                                <div class="col-md-3">Fecha: <input type="text" id="fecha" class="form-control datepicker" name="fecha" placeholder="Fecha"/></div>
+                                <div class="col-md-3">Hora: <input type="text" id="hora" class="form-control timepicker" name="hora" placeholder="Hora"/></div>
                                 <div class="col-md-6">Contrato: <input type="text" id="contrato" class="form-control" name="contrato"/></div>                                
                             </div>    
                             <div class=row> 
@@ -78,8 +105,8 @@ if ($_SESSION['login']!==true ) {
                                         Buscar
                                     </button>
                                 </div>
-                            </div>
-                                
+                                <input type="hidden" id="submited" name="submited" value="submited">
+                            </div>                                
                         </form>
                     </div>
                 </div>
@@ -87,10 +114,9 @@ if ($_SESSION['login']!==true ) {
         </div>
     </div>  
 </div>
-  
+<body>   
 <h1>Marcas</h1>
 	<table class="data-table" id="table-datatable">
-		<caption class="title">Buscador de marcas</caption>
 		<thead>
 			<tr>
 				<th>Código</th>
@@ -114,13 +140,53 @@ if ($_SESSION['login']!==true ) {
                     </tr>';
             }
         }?>
-		</tbody>		
-    </table>
+            <tr>
+                <td colspan="5">
+                    <nav>
+                    <ul class="pagination">
+                        <?php if($curpage != $startpage){ ?>
+                            <li class="page-item">
+                            <a class="page-link" href="?page=<?php echo $startpage ?>" tabindex="-1" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                                <span class="sr-only">First</span>
+                            </a>
+                            </li>
+                        <?php } ?>
+                        <?php if($curpage >= 2){ ?>
+                            <li class="page-item"><a class="page-link" href="?page=<?php echo $previouspage ?>"><?php echo $previouspage ?></a></li>
+                        <?php } ?>
+                        <li class="page-item active"><a class="page-link" href="?page=<?php echo $curpage ?>"><?php echo $curpage ?></a></li>
+                        <?php if($curpage != $endpage){ ?>
+                            <li class="page-item"><a class="page-link" href="?page=<?php echo $nextpage ?>"><?php echo $nextpage ?></a></li>
+                        <?php } ?>
+                        <?php if($curpage != $endpage){ ?>
+                            <li class="page-item">
+                            <a class="page-link" href="?page=<?php echo $endpage ?>" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                                <span class="sr-only">Last</span>
+                            </a>
+                            </li>
+                        <?php } ?>
+                    </ul>
+                    </nav>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="5">La consulta produjo <?php echo($totalres); ?> resultados</td>
+            </tr>
+        </tbody>
+        <tfoot>
+        
+        </tfoot>		
+    </table>        
     
-    <!-- <script type="text/javascript">
-        $(document).ready(function () {
-            $('#table-datatable').DataTable();
+    <script type="text/javascript">
+        $('.datepicker').datetimepicker({
+            'format': 'Y/M/D'
         });
-    </script> -->
+        $('.timepicker').datetimepicker({
+            'format': 'hh:mm'
+        });
+    </script>
 </body>
 </html>
