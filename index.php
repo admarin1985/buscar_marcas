@@ -56,6 +56,8 @@ if ($_SESSION['login']!==true ) {
     $paginatedQuery = $query . ' LIMIT '.$start.', '. $perpage;
 
     $rows = $db -> select($paginatedQuery);
+
+    $puestos = $db->select('select distinct puesto from estructura');
 ?>
 
 <html>
@@ -67,6 +69,7 @@ if ($_SESSION['login']!==true ) {
     <!-- Optional theme -->
     <link rel="stylesheet" href="bootstrap/dist/css/bootstrap-theme.min.css" >
     <link rel="stylesheet" href="bootstrap-datepicker/css/bootstrap-datetimepicker.min.css" >
+    <link rel="stylesheet" href="select2/dist/css/select2.min.css" >
 
     <!-- Latest compiled and minified JavaScript -->
     <script src="jquery/dist/jquery.min.js"></script>
@@ -75,6 +78,8 @@ if ($_SESSION['login']!==true ) {
     <script src="moment/min/moment.min.js"></script>
     <script src="moment/locale/es.js"></script>
     <script src="bootstrap-datepicker/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="select2/dist/js/select2.min.js"></script>
+    <script src="select2/dist/js/i18n/es.js"></script>
 
     
 </head>
@@ -95,7 +100,17 @@ if ($_SESSION['login']!==true ) {
                                 <div class="col-md-6">Contrato: <input type="text" id="contrato" class="form-control" name="contrato"/></div>                                
                             </div>    
                             <div class=row> 
-                                <div class="col-md-6">Puesto: <input type="text" id="puesto" class="form-control" name="puesto"/></div>
+                                <div class="col-md-6">Puesto:
+                                    <select class="form-control" id="puesto" name="puesto">
+                                        <option></option>
+                                    <?php
+                                        if($puestos !== false){        
+                                            foreach($puestos as $puesto){
+                                                echo '<option>'.$puesto['puesto'].'</option>';
+                                            }
+                                        }?> 
+                                    </select>
+                                </div>
                                 <div class="col-md-6">Marca: <input type="text" id="marca" class="form-control" name="marca"/></div> 
                             </div>
                             <br>
@@ -187,6 +202,9 @@ if ($_SESSION['login']!==true ) {
         $('.timepicker').datetimepicker({
             'format': 'hh:mm'
         });
+
+        $('select').select2();
+
     </script>
 </body>
 </html>
